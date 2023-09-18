@@ -1,0 +1,235 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Schedules</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
+    <!-- Bootstrap CSS -->
+    <link href='https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css' rel='stylesheet'
+        integrity='sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC' crossorigin='anonymous'>
+    <!-- stylesheets -->
+    <link rel="stylesheet" href="../CSS/style script.css">
+    <link rel="stylesheet" href="../CSS/lightPages.css">
+    <link rel="stylesheet" href="../CSS/admin.css">
+    <link href='https://fonts.googleapis.com/css?family=Montserrat' rel='stylesheet'>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js"
+        integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k"
+        crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <div class="">
+        <!-- standard nav bar -->
+        <nav class="navbar navbar-expand-lg navbar-light">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="">Tuition Centre</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false"
+                    aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarNavDropdown">
+                    <!-- right navbar links -->
+                    <!-- <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a id="navbar" class="nav-link active" aria-current="page" href="#">Contact</a>
+                        </li>
+                        <li class="nav-item">
+                            <a id="navbar" class="nav-link" href="#">About</a>
+                        </li>
+                    </ul> -->
+
+                    <!-- left navbar links -->
+                    <ul class="navbar-nav ms-auto">
+                        <div class="container">
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink"
+                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="bi bi-person"></i> Admin
+                                </a>
+                                <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                                    <div id="logout"></div>
+                                </div>
+                            </li>
+                        </div>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container mainBody ">
+            <div class="row">
+                <div class="col-4">
+                    <h3 class="textColor">Tutor Management</h3>
+                    <h6 id="pending"></h6>
+                    <h6 id="approved"></h6>
+                    <h3 class="textColor">Schedule Management</h3>
+                    <h6 id="createSchedules"></h6>
+                    <h6 class="current"></h6>
+                </div>
+
+                <div class="col-8">
+                    <h2 class="textColor">View Class Schedules</h3>
+                        <main>
+                            <div id="main-container">
+                                <h3 id="loadingmsg">Loading... Please wait!</h3>
+                                <div id="errors"></div>
+                                <div class="table-outer-div container nopadding">
+                                    <div class="table-inner-div container nopadding">
+                                        <table class="table" id="schedule" style="display:none">
+                                            <thead>
+                                                <tr>
+                                                    <th>ScheduleID</th>
+                                                    <th>Subject</th>
+                                                    <th>Grade</th>
+                                                    <th>Year</th>
+                                                    <th>Day</th>
+                                                    <th>Timing</th>
+                                                    <th>TutorID</th>
+                                                    <th>Students</th>
+                                                </tr>
+                                            </thead>
+                                        </table>
+                                    </div>
+                                </div>
+                                <!-- <table border="1" id="schedule" style="display:none">
+                                <tr>
+                                    <th>ScheduleID</th>
+                                    <th>Subject</th>
+                                    <th>Grade</th>
+                                    <th>Year</th>
+                                    <th>Day</th>
+                                    <th>Timing</th>
+                                    <th>TutorID</th>
+                                    <th>studentID</th>
+                                </tr>
+                            </table> -->
+                            </div>
+                        </main>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+        const token = urlParams.get('token')
+        // const url = "http://10.124.9.182:5004/getClassSchedules" + `?token=${token}`
+        // const url = "http://10.124.141.82:5004/getClassSchedules" + `?token=${token}`
+        const url = "http://localhost:5004/getClassSchedules" + `?token=${token}`
+
+        function logout() {
+            window.location.replace(`./adminLogin.html`)
+        }
+
+        async function getStudents(event) {
+            let scheduleID = Number(event.parentNode.parentNode.id)
+            if (document.getElementById(`${scheduleID}button`).value == 'Show Students') {
+                window.alert("Getting students... Please wait after clicking OK!")
+                document.getElementById(`${scheduleID}button`).value = 'Hide Students'
+                var url = "http://localhost:5002/getStudents" + `?scheduleID=${scheduleID}`
+                const response = await fetch(url)
+                let data = await response.json()
+                studentList = data['students']
+                if (studentList.length == 0) {
+                    window.alert("No students are currently registered!")
+                    document.getElementById(`${scheduleID}button`).value = 'Show Students'
+                }
+                else {
+                    let table = document.getElementById(`${scheduleID}students`)
+                    for (let student of studentList) {
+                        table.innerHTML += `<tr>
+                                                <td>${student['student_id']}</td>
+                                                <td>${student['firstName']} ${student['lastName']}</td>
+                                            </tr>`
+                    document.getElementById(`${scheduleID}row`).style.display = 'block'
+                    }
+                }
+            }
+            else {
+                document.getElementById(`${scheduleID}students`).innerHTML = `<tr>
+                                                                                    <th>Student ID</th>
+                                                                                    <th>Full Name</th>
+                                                                                </tr>`
+                document.getElementById(`${scheduleID}row`).style.display = 'none'
+                document.getElementById(`${scheduleID}button`).value = 'Show Students'
+            }
+        }
+
+        async function getClassSchedules(url) {
+            const response = await fetch(url)
+            let data = await response.json()
+
+            
+            // invalid token
+            if (data['code'] > 300) {
+                message = data['message']
+                logout()
+                alert(message + " Please login again.")
+            }
+            // 
+            else if (data['scheduleList'].length > 0) {
+                showClassSchedules(data)
+            }
+            // when there's no approved tutors
+            else {
+                showError("There are no tutors")
+            }
+        }
+
+        function showClassSchedules(data) {
+            let scheduleList = data['scheduleList']
+            let classDict = data['classDict']
+            for (let schedule of scheduleList) {
+                document.getElementById('schedule').innerHTML +=
+                    `
+                        <tr id='${schedule['scheduleID']}'>
+                            <td>${schedule['scheduleID']}</td>
+                            <td>${classDict[schedule['classID']][0]}</td>
+                            <td>${classDict[schedule['classID']][1]}</td>
+                            <td>${schedule['year']}</td>
+                            <td>${schedule['day']}</td>
+                            <td>${schedule['timing']}</td>
+                            <td>${schedule['tutorID']}</td>
+                            <td><button type="submit" id='${schedule['scheduleID']}button' onclick="getStudents(this)" class="btn designBtn">Show Students</button></td>
+                        </tr>
+                        <tr>
+                            <td colspan='8' id='${schedule['scheduleID']}row' style='display:none'>
+                                <table id='${schedule['scheduleID']}students' border='1' width='100%'>
+                                    <tr>
+                                        <th>Student ID</th>
+                                        <th>Full Name</th>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    `
+            }
+            document.getElementById('loadingmsg').style.display = 'none'
+            document.getElementById('schedule').style.display = 'block'
+        }
+
+        getClassSchedules(url)
+    </script>
+
+    <script>
+        document.getElementById('pending').innerHTML += `<a href='./adminViewPendingTutors.html?token=${token}'>View Pending Tutors</a>`
+        document.getElementById('approved').innerHTML += `<a href='./adminViewApprovedTutors.html?token=${token}'>View Approved Tutors</a>`
+        document.getElementById('createSchedules').innerHTML += `<a href='./adminCreateSchedules.html?token=${token}'>Create Class Schedules</a>`
+        document.getElementById('logout').innerHTML += `<a class="dropdown-item  text-dark" ><button type="submit" class="btn" onclick="logout()">Logout</button></a>`
+    </script>
+
+    <!-- Bundled Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous">
+    </script>
+</body>
+
+</html>

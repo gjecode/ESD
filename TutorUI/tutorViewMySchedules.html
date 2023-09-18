@@ -1,0 +1,187 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View My Class Schedules</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
+    <!-- using CDN -->
+    <script src="https://unpkg.com/vue@next"></script>
+
+    <!-- stylesheets -->
+    <!-- <link rel="stylesheet" href="../CSS/tutorView.css"> -->
+    <link rel="stylesheet" href="../CSS/style script.css">
+    <link rel="stylesheet" href="../CSS/lightPages.css">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:100,200,300,500,700" rel="stylesheet">
+    <link href='https://fonts.googleapis.com/css?family=Mulish' rel='stylesheet'>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+        integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js"
+        integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k"
+        crossorigin="anonymous"></script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+</head>
+
+<body>
+
+    <script>
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+        const token = urlParams.get('token')
+        const url = "http://localhost:5008/showTutorClasses" + `?token=${token}`
+
+        function logout() {
+            window.location.replace(`./tutorLogin.html`)
+        }
+
+        function showError(message) {
+            $('#errors')
+                .append("<label>" + message + "</label>")
+            
+            document.getElementById('loadingmsg').style.display = 'none'
+
+        }
+
+        async function getMySchedule(url) {
+            try {
+                const response = await fetch(url)
+                let data = await response.json()
+
+                // Token expired, unauthorised credentials, code 401
+                if (data['code'] > 300) {
+                    message = data['message']
+                    logout()
+                    alert(message + " Please login again.")
+                }
+                
+                // display enrolled classes
+                else if (data['scheduleList'].length > 0) {
+                    showMySchedules(data)
+
+                // there are no enrolled classes to display
+                } else {
+                    showError("You have not registered for any class.")
+                }
+            } 
+            
+            catch (error) {
+                showError("There are issues with displaying your classes. Please contact administrator.")
+            }
+
+        }
+
+        function showMySchedules(data) {
+            let scheduleList = data["scheduleList"]
+            let classDict = data['classDict']
+            for (let schedule of scheduleList) {
+                document.getElementById('schedules').innerHTML +=
+                    `<tr id="${schedule['scheduleID']}">
+                    <td>${schedule['scheduleID']}</td>
+                    <td>${classDict[schedule['classID']][0]}</td>
+                    <td>${classDict[schedule['classID']][1]}</td>
+                    <td>${schedule['year']}</td>
+                    <td>${schedule['day']}</td>
+                    <td>${schedule['timing']}</td>
+                </tr>`
+            }
+            document.getElementById('loadingmsg').style.display = 'none'
+            document.getElementById('schedules').style.display = 'block'
+        }
+
+        getMySchedule(url)
+    </script>
+    <div>
+        <!-- standard nav bar -->
+        <nav class="navbar navbar-expand-lg navbar-light">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="">Tuition Centre</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false"
+                    aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarNavDropdown">
+                    <!-- right navbar links -->
+                    <!-- <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a id="navbar" class="nav-link active" aria-current="page" href="#">Contact</a>
+                        </li>
+                        <li class="nav-item">
+                            <a id="navbar" class="nav-link" href="#">About</a>
+                        </li>
+                    </ul> -->
+
+                    <!-- left navbar links -->
+                    <ul class="navbar-nav ms-auto">
+                        <div class="container">
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink"
+                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="bi bi-person"></i> Tutor
+                                </a>
+                                <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                                    <div id="logout"></div>
+                                </div>
+                            </li>
+                        </div>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <div class="container mainBody ">
+            <div class="row">
+                <div class="col-4">
+                    <h3 class="textColor">Tutor</h3>
+                    <h6 id="pending"></h6>
+                    <h6 id="viewClasses"></h6>
+                    <h6 class="current"></h6>
+                </div>
+                <div class="col-8">
+                    <h2 class="textColor">View My Class Schedules</h2>
+                    <div id="main-container">
+                        <h3 id="loadingmsg">Loading... Please wait!</h3>
+                        <div id="errors"></div>
+                        <div class="table-outer-div container nopadding">
+                            <div class="table-inner-div container nopadding">
+                                <table class="table" id="schedules" style="display:none">
+                                    <thead>
+                                        <tr>
+                                            <th>ScheduleID</th>
+                                            <th>Subject</th>
+                                            <th>Grade</th>
+                                            <th>Year</th>
+                                            <th>Day</th>
+                                            <th>Timing</th>
+                                        </tr>
+                                    </thead>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('viewClasses').innerHTML += `<a href='./tutorViewUnassignedClasses.html?token=${token}'>View Unassigned Classes</a>`
+        document.getElementById('logout').innerHTML += `<a class="dropdown-item  text-dark" ><button type="submit" class="btn btn-light" onclick="logout()">Logout</button></a>`
+    </script>
+
+    <!-- Bundled Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous">
+    </script>
+
+</body>
+
+</html>
